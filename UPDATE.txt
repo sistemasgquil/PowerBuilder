@@ -1,0 +1,62 @@
+/*
+	------------------------------------------------------
+				-- Región de Variables --
+   -------------------------------------------------------				
+*/
+Integer ll_row
+string ls_sql, ls_id_usuario, ls_nombre
+integer li_rc
+
+ // *************** Conección BD ********************* By Acueva 2025-03-13 *** **********************************
+SQLCA.DBMS="ODBC"; SQLCA.AutoCommit=False; SQLCA.DBParm="ConnectString='DSN=basetutorial;UID=;PWD='" 
+			IF SQLCA.SQLCode = 0 THEN
+						 DISCONNECT USING SQLCA;
+				END IF
+				CONNECT USING SQLCA;
+// ****************    Region de Métodos ******************************				
+TRY
+	IF SQLCA.SQLCode <> 0 THEN
+  			  MessageBox("Error Nivel1", "No se pudo conectar a la base de datos: " + SQLCA.SQLErrText)
+   			 RETURN
+	END IF
+	// Asignar la transacción al DataWindow
+				dw_1.SetTransObject(SQLCA)
+				dw_1.Retrieve()
+				ls_nombre= sle_2.text
+
+	 if sle_1.Text="" or sle_2.text="" then
+		        MessageBox("Advertencia", "Debe ingresar el ID o nombres vacios.")
+		return
+	end if
+// ---------------  Region "Asignación de la Data"	 --------------
+    ls_id_usuario = sle_1.Text
+    // Validación de datos de entrada
+    IF ls_id_usuario = "" and Trim(sle_2.Text) = "" THEN
+        MessageBox("Advertencia", "Debe ingresar el ID del usuario y el nuevo nombre.")
+        RETURN
+    END IF
+
+UPDATE Usuarios SET name = :ls_nombre WHERE id_user = :ls_id_usuario
+USING SQLCA;
+       
+			 ll_row= dw_1.update(true)
+
+				If ll_row >0 then 
+					 
+					  dw_1.SetItem(Integer(sle_1.Text), "name", Trim(sle_2.Text))
+					  dw_1.AcceptText()
+					  COMMIT USING SQLCA;
+   					 MessageBox("Éxito", "Usuario Actualizado correctamente con, ID: " + String(ls_id_usuario))
+					 sle_2.text=""
+				Else
+					 ROLLBACK USING SQLCA;
+   					 MessageBox("Error Nivel2", "No se pudo actualizar el usuario: " + SQLCA.SQLErrText)
+				End If
+
+CATCH (Exception ex)
+    MessageBox("Error Nivel3 General", "Ocurrió un error al actualizar: " + ex.GetMessage())
+	  ROLLBACK USING SQLCA;
+				
+finally 
+	DISCONNECT USING SQLCA; 
+END TRY

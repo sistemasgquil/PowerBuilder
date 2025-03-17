@@ -1,0 +1,8 @@
+String ls_user_id
+// Obtener la fila en la que se hizo clic
+li_row = dw_1.GetRow()
+// Obtener el ID del usuario de la fila seleccionada (suponiendo que 'user_id' es el nombre de la columna)
+ls_user_id = dw_1.GetItemString(li_row, "name")
+sle_3.text=String(li_row)
+// Mostrar el ID del usuario seleccionado en un MessageBox
+MessageBox("ID del Usuario", "El ID del usuario seleccionado es: " + ls_user_id + "Con Id:" + String(li_row))

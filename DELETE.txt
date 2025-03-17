@@ -1,0 +1,12 @@
+try
+	if(sle_3.Text="" or sle_3.Text="0") then 
+		return
+	end if	
+	num_fila= Integer(sle_3.Text)
+		fnborrar(num_fila)	
+
+catch(Exception ex)
+	messagebox ("Error", "Ocurrió un error AC: " + String(ERROR))
+finally 
+	li_row=0; 	num_fila=0
+End try

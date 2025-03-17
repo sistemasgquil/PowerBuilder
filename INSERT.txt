@@ -1,0 +1,69 @@
+// Configuración de la conexión a la base de datos
+SQLCA.DBMS = "ODBC"
+SQLCA.AutoCommit = True 
+SQLCA.DBParm="ConnectString='DSN=basetutorial;UID=;PWD='"
+String ls_sql =""
+// Conectar a la base de datos  CONNECT USING SQLCA;
+				IF SQLCA.SQLCode = 0 THEN
+						 DISCONNECT USING SQLCA;
+				END IF
+				CONNECT USING SQLCA;
+
+IF SQLCA.SQLCode <> 0 THEN
+    MessageBox("Error Nivel1", "No se pudo conectar a la base de datos: " + SQLCA.SQLErrText)
+    RETURN
+END IF
+
+// Asignar la transacción al DataWindow
+dw_1.SetTransObject(SQLCA)
+dw_1.Retrieve()
+
+//*******************  Variables ****************************
+String ls_nombre, l_pass  
+Integer ll_last_id, l_estado
+//*******************************************************
+// Obtener el último ID de usuario
+ll_last_id = 0
+Select MAX(Id_user) INTO :ll_last_id FROM Usuarios USING SQLCA;
+IF SQLCA.SQLCode <> 0 THEN
+    MessageBox("Error Nivel 1.2", "Error al obtener el último ID de usuario: " + SQLCA.SQLErrText)
+    RETURN
+END IF
+
+// Calcular el nuevo ID
+ll_last_id = ll_last_id + 1
+
+// Insertar el nuevo usuario con `INSERT INTO`
+ls_nombre =sle_2.Text
+l_pass = "123"  
+l_estado = 1
+//MessageBox("Valores antes de insertar", "ID: " + String(ll_last_id) + "~r~nNombre: " + ls_nombre + "~r~nPassword: " + l_pass + "~r~nEstado: " + String(l_estado))
+if(ls_nombre="" or l_pass ="" or ll_last_id=0 ) then
+		MessageBox("Data vacia en ",String(ls_nombre)+" Estado: " + String(l_estado)+ " Secuencial:"+String(ll_last_id))
+		return;
+end if
+				INSERT INTO Usuarios (id_user, name, password, estado) 
+				VALUES (:ll_last_id, :ls_nombre, :l_pass, :l_estado) 
+				USING SQLCA;
+IF SQLCA.SQLCode <> 0 THEN
+				 MessageBox("Error Nivel2 ", "No se pudo insertar el usuario: " + SQLCA.SQLErrText)
+				 ROLLBACK USING SQLCA;
+				 RETURN
+	else
+				If dw_1.update(true)=1 then
+					 COMMIT USING SQLCA;
+   					 MessageBox("Éxito", "Usuario grabado correctamente con ID: " + String(ll_last_id))
+					 sle_2.text=""
+				End If	 
+END IF
+
+// Agregar fila en el DataWindow y actualizar
+dw_1.InsertRow(0)  // Agrega al final
+dw_1.SetItem(dw_1.RowCount(), "id_user", ll_last_id)
+dw_1.SetItem(dw_1.RowCount(), "name", ls_nombre)
+dw_1.SetItem(dw_1.RowCount(), "estado", l_estado)
+dw_1.AcceptText()
+ls_nombre=""; sle_2.Text=""
+
+// Desconectar la base de datos
+DISCONNECT USING SQLCA;  // DISCONNECT USING SQLCA;
