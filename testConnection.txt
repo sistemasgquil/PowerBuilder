@@ -1,0 +1,6 @@
+//***** Función de Pruebas de conección *************
+					n_db_connection lodb
+					lodb = CREATE n_db_connection
+					lodb.ue_Connect()
+
+DESTROY lodb

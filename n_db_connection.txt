@@ -1,0 +1,18 @@
+// Declarar variables
+SQLCA.DBMS = "ODBC"
+SQLCA.Database = "crudtest"
+SQLCA.UserId = "DBA"
+SQLCA.DBPass = "xxx"
+SQLCA.LogPass = ""
+SQLCA.ServerName = "ServidorSQL"
+SQLCA.AutoCommit = False
+
+CONNECT USING SQLCA;
+
+IF SQLCA.SQLCode <> 0 THEN
+    MessageBox("Error", "No se pudo conectar a la base de datos: " + SQLCA.SQLErrText)
+	 return 0
+else
+	    MessageBox("Exito", "Conexión correcta al DNS: "+ SQLCA.DBMS )
+	return 1
+END IF

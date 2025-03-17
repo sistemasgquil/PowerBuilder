@@ -1,0 +1,30 @@
+SQLCA.DBMS="ODBC"
+SQLCA.AutoCommit=False
+SQLCA.DBParm="ConnectString='DSN=basetutorial;UID=;PWD='"
+CONNECT USING SQLCA;
+string password
+string login
+string l_usuario
+integer nivel
+integer id,estado,ls_usuario,li_count_user
+string nombre,ls_clave
+try
+ls_usuario=Integer(sle_login.text) ; ls_clave=String(sle_pass.Text)
+
+Select COUNT(*) INTO :li_count_user from Usuarios WHERE id_user =  :ls_usuario and password=:ls_clave and Estado=1 USING SQLCA;
+	w_frm_empleado lw_ventana2
+	 lw_ventana2 = CREATE w_frm_empleado
+	lw_ventana2.setparametro(ls_usuario)  // Pasamos el ID de usuario
+		// messagebox("Info User data",ls_usuario)
+if(li_count_user>0) then 
+	open(w_frm_empleado) 
+
+	close(w_main)
+else
+		messagebox("Error Id","Info User data no encontrado Revisa usuario activo y clave Correcto!")
+		LimpiarData()
+		return
+	end if
+Catch(runtimeerror  o)	
+    MessageBox("Error", "Ocurrió un error: " + o.getmessage())
+end try
