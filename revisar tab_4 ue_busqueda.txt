@@ -1,0 +1,167 @@
+datawindowchild dc_1, dc_2, dc_3
+int ret
+long ll_partida,ll_secuen
+string sl_secuen
+
+IF dw_ingreso.of_hay_cambios () and	dw_detalle1.of_hay_cambios() then
+	ret =  MessageBox ("AVISO", "Los datos han sido modificados~r~n" &
+						  +"Desea grabar los cambios ?", question!, YesNoCancel!, 1)
+	Choose case ret
+		case 1
+			dw_ingreso.Event ue_update ()
+			dw_detalle1.Event ue_update ()
+		case 3
+			return 0
+	END CHOOSE
+END IF
+
+
+if this.dw_1.RowCount() = 0 then
+	tab_1.SelectTab (2)
+	dw_ingreso.reset()
+
+	tab_1.tabpage_2.dw_empleo.reset()
+	tab_1.tabpage_3.dw_otros.reset()
+	tab_1.tabpage_6.dw_intranet.reset()
+	dw_detalle1.reset()
+	dw_ingreso.Getchild("cod_ciudad",dc_1)
+	dc_1.SettransObject(sqlca)
+	dc_1.Retrieve(1)
+	
+	dw_ingreso.Getchild("cod_canton",dc_1)
+	dc_1.SettransObject(sqlca)
+	dc_1.Retrieve(1)
+
+	dw_ingreso.Getchild("cod_parroquia",dc_1)
+	dc_1.SettransObject(sqlca)
+	dc_1.Retrieve(1,1)
+
+   dw_detalle1.GetChild("cod_oficina",dc_2)
+   dc_2.SetTransObject(sqlca)
+   dc_2.Retrieve(g_app.is_login)
+
+	tab_1.tabpage_2.dw_empleo.Getchild("cod_oficina",dc_2)
+	dc_2.SetTransObject(sqlca)
+	dc_2.retrieve(g_app.is_login)
+	
+	ls_cedula_b = of_get_busqueda()
+   if digito_verificador('C', ls_cedula_b) = false and ls_cedula_b > '0000999999' then
+		Messagebox("PRECAUCION!","¡La Cedula esta errada~rNo puede actualizar los datos")
+		return
+	end if
+
+/*	tab_1.tabpage_2.dw_empleo.Getchild("cod_oficina",dc_2)
+	dc_2.SetTransObject(sqlca)
+	dc_2.retrieve(g_app.is_login)*/
+	
+	tab_1.tabpage_2.dw_empleo.Getchild("cod_dependencia",dc_2)
+	dc_2.SetTransObject(sqlca)
+	dc_2.retrieve(g_app.ii_cod_suc)
+
+	tab_1.tabpage_2.dw_empleo.event ue_insertar()
+	tab_1.tabpage_3.dw_otros.event ue_insertar()
+	
+	dw_detalle1.GetChild("cod_motivo",dc_3)
+	dc_3.SetTransObject(sqlca)
+	dc_3.Retrieve("ING")
+//	messagebox('cod_posicion',ls_pos_hijo)
+   dw_detalle1.GetChild("cod_cargo",dc_1)
+   dc_1.settransobject( sqlca)
+   dc_1.retrieve('A')
+
+	dw_detalle1.GetChild("cod_posicion_padre",dc_1)
+	dc_1.SetTransObject(sqlca)
+	dc_1.Retrieve("111100000")
+
+	dw_detalle1.GetChild("cod_dependencia",dc_3)
+	dc_3.SetTransObject(sqlca)
+	dc_3.Retrieve(1)
+
+	dw_ingreso.event ue_insertar()
+	dw_detalle1.event ue_insertar()
+//	tab_1.tabpage_2.dw_empleo.event ue_insertar()
+
+	ll_partida = 1
+	ll_secuen = 1
+	
+	do while ll_secuen <> 0
+
+	   ll_partida = ll_partida + 1
+
+	   select count(*)
+	   into :ll_secuen
+	   from srh_empleado
+	   where num_partida_emp = :ll_partida
+	   ;
+
+	loop
+//	messagebox('xxxxxx',string(ll_partida))
+
+	dw_ingreso.object.num_cedula_emp[1] = of_get_busqueda()	
+	dw_ingreso.object.num_partida_emp[1] = ll_partida
+
+	dw_detalle1.object.num_cedula_emp[1] = of_get_busqueda()
+	dw_detalle1.object.fec_creacion_accion[1] = f_gb_fecha_servidor()
+
+	// Aquí se agrega el código para el consumo de servicio web de DINARDAP
+	
+		Long ll_control_cedula, li_encuentradinardap, ll_cod_error
+		String ls_mensaje, sd_fecha_nac
+		Datastore lds_dinardap_emp
+		ls_cedula = dw_ingreso.object.num_cedula_emp[1]
+		select count(*)
+		into :ll_control_cedula
+		from srh_empleado
+		where num_cedula_emp = :ls_cedula
+		;
+		
+		if ll_control_cedula = 0 then
+			
+				// lds_dinardap_emp = create datastore
+				// lds_dinardap_emp.DataObject = 'd_dinardap_fam'
+				  MessageBox("Llega Aqui ue_get_busqueda: w_acciones_p "+ String(ll_control_cedula),"API SOAP")				
+				//lds_dinardap_emp.SetTransObject( sqlca )  // linea de abajo se cae
+//				li_encuentradinardap = lds_dinardap_emp.retrieve(ls_cedula,'kfabara','P@sw0rdBE')
+					n_webservice  p_srd_wsproxy_ac
+					p_srd_wsproxy_ac = create n_webservice
+					p_srd_wsproxy_ac.of_SetEndpoint("https://serviciosbancarioscl.banecuador.fin.ec/WS-BNF-MOVIL-war/WSMovil?wsdl")
+					string ls_response
+					ls_response = myWebService.of_InvokeMetodo(ls_cedula, 'kfabara','P@sw0rdBE')
+					destroy p_srd_wsproxy_ac
+
+	    end if
+			If li_encuentradinardap  = 1 then 
+					ll_cod_error = lds_dinardap_emp.object.error[1]
+					ls_mensaje = lds_dinardap_emp.object.mensaje[1]					
+					if ll_cod_error = 0 then
+						 sd_fecha_nac =  lds_dinardap_emp.object.fechanacimiento[1]		
+						 dw_ingreso.object.fec_nacimiento_emp[1] = datetime(date(sd_fecha_nac), time('00:00:00'))
+						dw_ingreso.object.nom_empleado_emp[1] = lds_dinardap_emp.object.nombres[1]
+								if  lds_dinardap_emp.object.sexo[1] = 'MUJER' then
+										dw_ingreso.object.sts_sexo_emp[1] = 'F'
+								else
+										dw_ingreso.object.sts_sexo_emp[1] = 'M'
+								end if
+								if(lds_dinardap_emp.object.nacionalidad_emp[1]="") then
+										lds_dinardap_emp.object.nacionalidad_emp[1]="EC"
+								End if
+								dw_ingreso.object.sts_civil_emp[1] = lds_dinardap_emp.object.estadocivil[1]
+								dw_ingreso.object.txt_lugar_nacimiento_emp[1] = lds_dinardap_emp.object.lugarnacimiento[1]
+								dw_ingreso.object.fec_defuncion_emp[1] = lds_dinardap_emp.object.fechadefuncion[1]
+								dw_ingreso.object.nom_instruccion_emp[1] = lds_dinardap_emp.object.nivelinstruccion[1]			
+								dw_ingreso.object.nacionalidad_emp[1] = lds_dinardap_emp.object.nacionalidad_emp[1] // Here of change 2025-03
+								tab_1.tabpage_2.dw_empleo.object.nom_instruccion_emp[1] = lds_dinardap_emp.object.nivelinstruccion[1]
+								destroy lds_dinardap_emp
+				else 
+					messagebox('Error', 'Error retornado por Dinardap: ' + ls_mensaje) //if ll_cod_error = 0
+				end if
+			else
+				messagebox('Error', 'Error en la conexión con el servido de Dinardap') 
+			end if	
+		else // ll_control_cedula=0 aun esta en pantalla antes de escoger la persona
+		
+		
+	End if
+		//end if
+	//Fin de código agregado.
+
